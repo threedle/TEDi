@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+    content="TEDi Motion Diffusion, entangling time-axis of diffusion and time-axis of animation for motion synthesis">
+  <meta name="keywords" content="TEDi, Motion Diffusion Models, Long-term Motion Synthesis">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TEDi Motion</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+
+<body>
+
+  <nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+    <div class="navbar-menu">
+      <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+        <a class="navbar-item" href="https://3dl.cs.uchicago.edu/">
+          <span class="threedle-icon"></span>
+        </a>
+      </div>
+
+    </div>
+  </nav>
+
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title"><span style="text-shadow: 2px 2px 0px #c0c0c0">TEDi:
+                <strong>T</strong>emporally-Entangled Diffusion for Motion Synthesis</span></h1>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                <a href="https://3dl.cs.uchicago.edu/">Zihan Zhang</a><sup>1</sup>,</span>
+              <span class="author-block">
+                <a href="https://3dl.cs.uchicago.edu/">Richard Liu</a><sup>1</sup>,</span>
+              <span class="author-block">
+                <a href="https://kfiraberman.github.io/">Kfir Aberman</a><sup>2</sup>,</span>
+              <span class="author-block">
+                <a href="https://people.cs.uchicago.edu/~ranahanocka/">Rana Hanocka</a><sup>1</sup>
+              </span>
+            </div>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block"><sup>1</sup>University of Chicago</span>
+              <span class="author-block"><sup>2</sup>Google Research</span>
+            </div>
+            <div class="column has-text-centered">
+              <p>Paper and code links soon!</p>
+            </div>
+<!-- 
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <span class="link-block">
+                  <a href="https://3dl.cs.uchicago.edu/" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                    </span>
+                    <span>Paper</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://3dl.cs.uchicago.edu/" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                    </span>
+                    <span>arXiv</span>
+                  </a>
+                </span>
+                <!-- Code Link. -->
+                <!-- <span class="link-block">
+                  <a href="https://3dl.cs.uchicago.edu/" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fab fa-github"></i>
+                    </span>
+                    <span>Code</span>
+                  </a>
+                </span>
+              </div>
+
+            </div>
+             -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero teaser">
+    <div class="container is-max-desktop">
+      <div class="hero-body">
+        <video width="1280" height="960" poster="" id="bunny-headphones" controls autoplay muted loop playsinline
+          height="100%">
+          <source src="./static/videos/teaser_animation.mov" type="video/mp4">
+        </video>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="section">
+
+    <div class="container is-max-desktop">
+      <div class="bg">
+        <div class="columns is-centered has-text-centered">
+          <div class="column is-four-fifths">
+            <h2 class="title is-3">Abstract</h2>
+            <div class="content has-text-justified">
+
+              <p>
+                The gradual nature of a diffusion process that synthesizes samples in small
+                increments constitutes a key ingredient of Denoising Diffusion Probabilistic
+                Models (DDPM), which have presented unprecedented quality in image
+                synthesis and been recently explored in the motion domain. In this work, we
+                propose to adapt the gradual diffusion concept (operating along a diffusion
+                time-axis) into the temporal-axis of the motion sequence. Our key idea is
+                to extend the DDPM framework to support temporally varying denoising,
+                thereby entangling the two axes. Using our special formulation, we itera-
+                tively denoise a motion buffer that contains a set of increasingly-noised poses,
+                which auto-regressively produces an arbitrarily long stream of frames. With
+                a stationary diffusion time-axis, in each diffusion step we increment only
+                the temporal-axis of the motion such that the framework produces a new,
+                clean frame which is removed from the beginning of the buffer, followed
+                by a newly drawn noise vector that is appended to it. This new mechanism
+                paves the way towards a new framework for long-term motion synthesis
+                with applications to character animation and other domains.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider" />
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Tranining</h2>
+          <div class="content has-text-justified">
+          </div>
+          <div class="overview-image">
+            <img src="./static/images/figures/training.png" type="image/png">
+          </div>
+          <div class="content has-text-justified">
+            <p>
+              We train our diffusion-based model to remove temporally-varying noise that is applied to clean sequences
+              during training. In each iteration we fetch a motion sequence from the dataset, apply noise to it
+              according to a noise level schedule, and train our network to predict the clean motion sequence in a
+              supervised fashion.
+            </p>
+          </div>
+          <div class="content has-text-justified">
+            <h2 class="title is-3">Inference</h2>
+          </div>
+          <div class="overview-image">
+            <img src="./static/images/figures/typewriter-2.png" type="image/png">
+          </div>
+          <div class="content has-text-justified">
+            <p>
+              Our method is capable of generating an arbitrarily long motion sequence. First, we initialize our
+              <i>motion buffer</i> with a a set of increasingly-noised motion frames. Then (step 1) we denoise the
+              entire motion buffer, (step 2) pop the new, clean frame in the beginning of the motion buffer, and then
+              (step 3) push noise into the end of the motion buffer. This process is repeated recursively.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider" />
+      <div class="columns is-centered has-text-centered bg">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Long-term generation</h2>
+          <div class="content has-text-justified ">
+            <p>
+              Our method synthesizes arbitrarily long motion sequences.
+            </p>
+          </div>
+          <div class="overview-image">
+            <video poster="" id="bunny-headphones" controls autoplay muted loop playsinline height="100%">
+              <source src="./static/videos/website_long.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+      </div>
+      <hr class="divider" />
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Guided Generation</h2>
+          <div class="content has-text-justified">
+            <p>
+              Given a set of <i>motion guides</i> (shown in yellow), we are able to perform them in sequence at desired
+              points while generating plausible motion in the interactively generated frames (blue). Our method
+              generates an entire motion sequence that contains the desired motion guides and the interactively
+              synthesized motion. The interactively generated motions will “prepare and plan” for the upcoming motion
+              guides.
+            </p>
+          </div>
+          <div class="overview-image">
+            <video poster="" id="bunny-headphones" controls autoplay muted loop playsinline height="100%">
+              <source src="./static/videos/website_guided.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+      </div>
+      <hr class="divider" />
+      <div class="columns is-centered has-text-centered bg">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Variation</h2>
+          <div class="content has-text-justified">
+            <p>
+              Due to the stochastic nature of diffusion models, our method is able to generate variations using the same
+              motion primer as input. We show four motions generated from a single primer, from left to right, we can
+              see that the motions begins to differ significantly as time goes on.
+            </p>
+          </div>
+          <div class="overview-image">
+            <video poster="" id="bunny-headphones" controls autoplay muted loop playsinline height="100%">
+              <source src="./static/videos/website_variation.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+      </div>
+      <hr class="divider" />
+      <section class="hero">
+
+        <div class="hero-body">
+          <div class="columns is-centered has-text-centered">
+            <h2 class="title is-3 is-centered">Gallery</h2>
+          </div>
+
+          <div class="container">
+            <div id="results-carousel" class="results-carousel">
+              <div class="item item-bunny-headphones">
+                <video poster="" id="bunny-headphones" autoplay muted loop playsinline height="100%">
+                  <source src="./static/videos/website_gallery_1.mov" type="video/mp4">
+                </video>
+                <p class="has-text-centered">Wandering around</p>
+              </div>
+              <div class="item item-bunny-headphones">
+                <video poster="" id="bunny-headphones" autoplay muted loop playsinline height="100%">
+                  <source src="./static/videos/website_gallery_2.mov" type="video/mp4">
+                </video>
+                <p class="has-text-centered">Zombie walk</p>
+              </div>
+              <div class="item item-bunny-headphones">
+                <video poster="" id="bunny-headphones" autoplay muted loop playsinline height="100%">
+                  <source src="./static/videos/website_gallery_3.mov" type="video/mp4">
+                </video>
+                <p class="has-text-centered">Sidesteps</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- <section class="section bg" id="BibTeX">
+        <div class="container is-max-desktop content">
+          <h2 class="title">BibTeX</h2>
+        </div>
+      </section> -->
+
+
+      <footer class="footer">
+        <div class="container">
+          <div class="content has-text-centered">
+            <a class="icon-link" href="https://github.com/threedle/" class="external-link" disabled>
+              <i class="fab fa-github"></i>
+            </a>
+          </div>
+          <div class="columns is-centered">
+            <div class="column is-8">
+              <div class="content">
+                <p>
+                  This website is licensed under a <a rel="license"
+                    href="https://creativecommons.org/licenses/by-sa/4.0/">Creative
+                    Commons Attribution-ShareAlike 4.0 International License</a>.
+                </p>
+                <p>
+                  Parts of the code for this website are reused from the <a
+                    href="https://github.com/nerfies/nerfies.github.io">source code</a> contributed by the authors of <a
+                    href="https://nerfies.github.io/">Nerfies</a>.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+</body>
+
+</html>
