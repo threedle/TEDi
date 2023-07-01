@@ -69,10 +69,9 @@
               <span class="author-block"><sup>1</sup>University of Chicago</span>
               <span class="author-block"><sup>2</sup>Google Research</span>
             </div>
-            <div class="column has-text-centered">
+            <!-- <div class="column has-text-centered">
               <p>Paper and code links soon!</p>
-            </div>
-<!-- 
+            </div> -->
             <div class="column has-text-centered">
               <div class="publication-links">
                 <span class="link-block">
@@ -92,7 +91,7 @@
                   </a>
                 </span>
                 <!-- Code Link. -->
-                <!-- <span class="link-block">
+            <span class="link-block">
                   <a href="https://3dl.cs.uchicago.edu/" class="external-link button is-normal is-rounded is-dark">
                     <span class="icon">
                       <i class="fab fa-github"></i>
@@ -103,7 +102,7 @@
               </div>
 
             </div>
-             -->
+            
           </div>
         </div>
       </div>
@@ -113,10 +112,18 @@
   <section class="hero teaser">
     <div class="container is-max-desktop">
       <div class="hero-body">
-        <video width="1280" height="960" poster="" id="bunny-headphones" controls autoplay muted loop playsinline
+        <video width="1280" height="960" poster="" id="bunny-headphones" autoplay muted loop playsinline
           height="100%">
           <source src="./static/videos/teaser_animation.mov" type="video/mp4">
         </video>
+        <div class="content has-text-justified">
+          <p>
+            We present <strong>TEDi</strong> (<strong>T</strong>emporally-<strong>E</strong>ntangled <strong>Di</strong>ffusion), a motion diffusion framework that entangles the time-axis of diffusion 
+            and the temporal-axis of moiton. Compared to traditional DDPM adaptations for motion synthesis, which requires several 
+            hundred denoising steps to produce a short sequence of clean motion, TEDi generates a <strong><em>continuous stream </em></strong>of clean motions 
+            frames throughout the process.
+          </p>
+        </div>
       </div>
     </div>
   </section>
@@ -135,7 +142,7 @@
                 The gradual nature of a diffusion process that synthesizes samples in small
                 increments constitutes a key ingredient of Denoising Diffusion Probabilistic
                 Models (DDPM), which have presented unprecedented quality in image
-                synthesis and been recently explored in the motion domain. In this work, we
+                synthesis and has been recently explored in the motion domain. In this work, we
                 propose to adapt the gradual diffusion concept (operating along a diffusion
                 time-axis) into the temporal-axis of the motion sequence. Our key idea is
                 to extend the DDPM framework to support temporally varying denoising,
@@ -146,18 +153,34 @@
                 the temporal-axis of the motion such that the framework produces a new,
                 clean frame which is removed from the beginning of the buffer, followed
                 by a newly drawn noise vector that is appended to it. This new mechanism
-                paves the way towards a new framework for long-term motion synthesis
+                paves the way toward a new framework for long-term motion synthesis
                 with applications to character animation and other domains.
               </p>
             </div>
           </div>
         </div>
       </div>
-
       <hr class="divider" />
       <div class="columns is-centered has-text-centered">
         <div class="column is-four-fifths">
-          <h2 class="title is-3">Tranining</h2>
+          <h2 class="title is-3">Key Idea</h2>
+
+          <div class="overview-image">
+            <video poster="" id="bunny-headphones" autoplay muted loop playsinline height="100%">
+              <source src="./static/videos/website_entangle.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="content has-text-justified ">
+            <p>
+              We entangle the time-axis of diffusion and the temporal-axis of motion, resulting in a 
+              <strong><em>motion buffer</em></strong> which encodes noisy predictions of future frames.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Training</h2>
           <div class="content has-text-justified">
           </div>
           <div class="overview-image">
@@ -166,22 +189,20 @@
           <div class="content has-text-justified">
             <p>
               We train our diffusion-based model to remove temporally-varying noise that is applied to clean sequences
-              during training. In each iteration we fetch a motion sequence from the dataset, apply noise to it
+              during training. In each iteration, we fetch a motion sequence from the dataset, apply noise to it
               according to a noise level schedule, and train our network to predict the clean motion sequence in a
               supervised fashion.
             </p>
           </div>
-          <div class="content has-text-justified">
-            <h2 class="title is-3">Inference</h2>
-          </div>
+          <h2 class="title is-3">Inference</h2>
           <div class="overview-image">
             <img src="./static/images/figures/typewriter-2.png" type="image/png">
           </div>
           <div class="content has-text-justified">
             <p>
               Our method is capable of generating an arbitrarily long motion sequence. First, we initialize our
-              <i>motion buffer</i> with a a set of increasingly-noised motion frames. Then (step 1) we denoise the
-              entire motion buffer, (step 2) pop the new, clean frame in the beginning of the motion buffer, and then
+              <i>motion buffer</i> with a set of increasingly-noised motion frames. Then (step 1) we denoise the
+              entire motion buffer, (step 2) pop the new, clean frame at the beginning of the motion buffer, and then
               (step 3) push noise into the end of the motion buffer. This process is repeated recursively.
             </p>
           </div>
@@ -191,7 +212,7 @@
       <hr class="divider" />
       <div class="columns is-centered has-text-centered bg">
         <div class="column is-four-fifths">
-          <h2 class="title is-3">Long-term generation</h2>
+          <h2 class="title is-3">Long-Term Generation</h2>
           <div class="content has-text-justified ">
             <p>
               Our method synthesizes arbitrarily long motion sequences.
@@ -205,44 +226,7 @@
         </div>
       </div>
       <hr class="divider" />
-      <div class="columns is-centered has-text-centered">
-        <div class="column is-four-fifths">
-          <h2 class="title is-3">Guided Generation</h2>
-          <div class="content has-text-justified">
-            <p>
-              Given a set of <i>motion guides</i> (shown in yellow), we are able to perform them in sequence at desired
-              points while generating plausible motion in the interactively generated frames (blue). Our method
-              generates an entire motion sequence that contains the desired motion guides and the interactively
-              synthesized motion. The interactively generated motions will “prepare and plan” for the upcoming motion
-              guides.
-            </p>
-          </div>
-          <div class="overview-image">
-            <video poster="" id="bunny-headphones" controls autoplay muted loop playsinline height="100%">
-              <source src="./static/videos/website_guided.mp4" type="video/mp4">
-            </video>
-          </div>
-        </div>
-      </div>
-      <hr class="divider" />
-      <div class="columns is-centered has-text-centered bg">
-        <div class="column is-four-fifths">
-          <h2 class="title is-3">Variation</h2>
-          <div class="content has-text-justified">
-            <p>
-              Due to the stochastic nature of diffusion models, our method is able to generate variations using the same
-              motion primer as input. We show four motions generated from a single primer, from left to right, we can
-              see that the motions begins to differ significantly as time goes on.
-            </p>
-          </div>
-          <div class="overview-image">
-            <video poster="" id="bunny-headphones" controls autoplay muted loop playsinline height="100%">
-              <source src="./static/videos/website_variation.mp4" type="video/mp4">
-            </video>
-          </div>
-        </div>
-      </div>
-      <hr class="divider" />
+
       <section class="hero">
 
         <div class="hero-body">
@@ -274,6 +258,48 @@
           </div>
         </div>
       </section>
+
+      <hr class="divider" />
+      <div class="columns is-centered has-text-centered bg">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Variation</h2>
+          <div class="content has-text-justified">
+            <p>
+              Due to the stochastic nature of diffusion models, our method is able to generate variations using the same
+              motion primer as input. We show four motions generated from a single primer, from left to right, we can
+              see that the motions begin to differ significantly as time goes on.
+            </p>
+          </div>
+          <div class="overview-image">
+            <video poster="" id="bunny-headphones" controls autoplay muted loop playsinline height="100%">
+              <source src="./static/videos/website_variation.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+      </div>
+      <hr class="divider" />
+
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Guided Generation</h2>
+          <div class="content has-text-justified">
+            <p>
+              Given a set of <i>motion guides</i> (shown in yellow), we are able to perform them in sequence at desired
+              points while generating plausible motion in the interactively generated frames (blue). Our method
+              generates an entire motion sequence that contains the desired motion guides and the interactively
+              synthesized motion. The interactively generated motions will “prepare and plan” for the upcoming motion
+              guides.
+            </p>
+          </div>
+          <div class="overview-image">
+            <video poster="" id="bunny-headphones" controls autoplay muted loop playsinline height="100%">
+              <source src="./static/videos/website_guided.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+      </div>
+
+
       <!-- <section class="section bg" id="BibTeX">
         <div class="container is-max-desktop content">
           <h2 class="title">BibTeX</h2>
