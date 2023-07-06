@@ -8,11 +8,13 @@ from typing import Tuple
 import torch
 import torch.nn.functional as F
 from einops import rearrange, reduce
-from src.variance_schedule import (cosine_beta_schedule, linear_beta_schedule,
-                                   sigmoid_beta_schedule)
 from torch import Tensor, nn
 from tqdm.auto import tqdm
-from util import DiffusionConfig, default, extract, torch_forward_kinematics
+from util import default, extract, torch_forward_kinematics
+
+from .losses import GeometricLoss
+from .variance_schedule import (cosine_beta_schedule, linear_beta_schedule,
+                                sigmoid_beta_schedule)
 
 log = logging.getLogger(__name__)
 
@@ -68,7 +70,7 @@ def velo_loss_fn(
     loss_weight: Tensor,
     mean: Tensor,
     std: Tensor,
-    detach: bool
+    detach: bool,
 ) -> Tensor:
 
     contact = model_out[..., -4:]
@@ -84,11 +86,11 @@ def velo_loss_fn(
 
     fc_loc = torch.tensor(CONTACT_JOINTS_IDX, device=model_out.device)
     model_fc = rearrange(torch.index_select(fk_pos, 2, fc_loc), "b l j k -> l b (j k)")
-    
+
     model_fc_label = model_out[..., -4:]
     if detach:
         model_fc_label = model_fc_label.detach()
-       
+
     model_fc_label = torch.sigmoid((model_fc_label - 0.5) * 12)
 
     # Velocity loss on foot joints
@@ -108,7 +110,7 @@ def velo_loss_fn(
 
 
 class Diffusion(nn.Module):
-    def __init__(self, denoiser, config: DiffusionConfig):
+    def __init__(self, denoiser, config):
         super().__init__()
         self.channels = denoiser.channels
         self.T = config.T
@@ -116,6 +118,8 @@ class Diffusion(nn.Module):
         self.objective = config.objective
         self.loss_type = config.loss_type
         self.t_variation = config.t_variation
+        self.pos_loss = config.pos_loss
+        self.velo_loss = config.velo_loss
         self.fk_loss_lambda = config.fk_loss_lambda
         self.detach_fc = config.detach_fc
 
@@ -241,8 +245,6 @@ class Diffusion(nn.Module):
     @torch.no_grad()
     def p_sample_loop(self, shape):
         device = self.betas.device
-
-        b = shape[0]
         imgs = []
         img = torch.randn(shape, device=device)
         imgs.append(img)
@@ -259,7 +261,7 @@ class Diffusion(nn.Module):
         motion_length = self.T
         channels = self.channels
         return self.p_sample_loop((motion_length, batch_size, channels))
-    
+
     def q_sample(self, x_start, t, noise=None):
         noise = default(noise, lambda: torch.randn_like(x_start))
 
@@ -278,14 +280,13 @@ class Diffusion(nn.Module):
             raise ValueError(f"invalid loss type {self.loss_type}")
 
     def p_losses(self, x_start, t, noise=None, *args, **kwargs):
-        b, c, l = x_start.shape
-        x_start = rearrange(x_start, "b c l -> l b c")
-
-        noise = default(noise, lambda: torch.randn_like(x_start))
         # Generate the noisy samples, rearranging x_start so the noisy
         # samples are generated across the right axis
+        x_start = rearrange(x_start, "b c l -> l b c")
+        noise = default(noise, lambda: torch.randn_like(x_start))
         log.debug(f"{x_start.shape=}, {t.shape=}, {noise.shape=}.")
         x = self.q_sample(x_start=x_start, t=t, noise=noise)
+
         # Rearrange x and pass to the network
         model_out = self.denoiser(rearrange(x, "l b c -> b c l"), t)
         # Rearrange model_out to pose order
@@ -298,64 +299,43 @@ class Diffusion(nn.Module):
         else:
             raise ValueError(f"unknown objective {self.objective}")
 
-        # Only compute the loss at frames index 1:T since we don't care about the first frame
-        loss = self.loss_fn(model_out[1:], target[1:], reduction="none")
+        # Compute loss
+        loss = self.loss_fn(model_out, target, reduction="none")
         loss = reduce(loss, "l ... -> l (...)", "mean")
-        loss *= extract(self.p2_loss_weight, t[1:], loss.shape)
+        loss *= extract(self.p2_loss_weight, t, loss.shape)
 
-        # FK loss on relative positions,
-        # NOTE: Assumes there's position data in groundtruth
-        if kwargs["pos_loss"]:
-            fk_pos_loss, fk_pos = fk_loss_fn(
-                model_out,
-                t,
-                kwargs["offsets"],
-                kwargs["hierarchy"],
-                target,
-                self.p2_loss_weight,
-            )
+        geometric_loss: GeometricLoss = kwargs["geometric_loss"]
 
-            if kwargs["velo_loss"]:
-                # target_pos = target[..., :93]
-                velo_loss = velo_loss_fn(
-                    model_out,
-                    t,
-                    kwargs["offsets"],
-                    kwargs["hierarchy"],
-                    self.p2_loss_weight,
-                    kwargs["mean"],
-                    kwargs["std"],
-                    self.detach_fc
-                )
-
-        if kwargs["pos_loss"]:
-            if kwargs["velo_loss"]:
+        if self.pos_loss:
+            if self.velo_loss:
                 return (
                     (1 - self.fk_loss_lambda) * loss.mean()
-                    + (self.fk_loss_lambda / 2) * fk_pos_loss.mean()
-                    + (self.fk_loss_lambda / 2) * velo_loss.mean()
+                    + (self.fk_loss_lambda / 2) * geometric_loss.fk_loss(model_out, target, t, self.p2_loss_weight).mean()
+                    + (self.fk_loss_lambda / 2) * geometric_loss.ik_loss(model_out, t, self.p2_loss_weight).mean()
                 )
             else:
-                return (
-                    1 - self.fk_loss_lambda
-                ) * loss.mean() + self.fk_loss_lambda * fk_pos_loss.mean()
+                return (1 - self.fk_loss_lambda) * loss.mean() + (
+                    self.fk_loss_lambda
+                ) * geometric_loss.fk_loss(model_out, target, t, self.p2_loss_weight).mean()
         else:
             return loss.mean()
 
-    def forward(self, motion, *args, **kwargs):
-        b, c, h, device, = (
+    def forward(self, motion: torch.Tensor, *args, **kwargs):
+        b, c, l, device, = (
             *motion.shape,
             motion.device,
         )
-        log.debug(f"({b}, {c}, {h}) is the input shape, with device {device}")
-        
-        # For t_variation training
-        # if kwargs["step"] >= 100000:
-        if torch.rand(1) >= self.t_variation:
+        log.debug(f"({b}, {c}, {l}) is the input shape, with device {device}")
+
+        # For curriculum
+        if kwargs["curriculum"]:
+            # Same t's
+            t = torch.randint(0, self.T, (1,), device=device).long().repeat(self.T)
+        elif torch.rand(1) >= self.t_variation:
             # Instead of sampling t as a random vector, we assign t = (0,1,...,T)
             t = torch.tensor(list(range(0, self.T)), device=device).long()
         else:
             # Randomized t's
             t = torch.randint(0, self.T, (self.T,), device=device).long()
-
+        log.debug(f"{t=}")
         return self.p_losses(motion, t, *args, **kwargs)

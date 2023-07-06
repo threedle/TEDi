@@ -16,20 +16,26 @@ from typing import Tuple
 import numpy as np
 import torch
 from einops import rearrange
-from src import Diffusion, Trainer, Unet
-from src.train_progressive_diffusion import initialize_model
+from models.diffusion import Diffusion
+from models.trainer import Trainer
+from train_progressive_diffusion import initialize_trainer
 from torch import Tensor
 from tqdm.auto import tqdm
-from util import (GlobalConfig, TestOptions, get_latest_checkpoint,
-                  load_config_from_json, setup_logging)
+from util import (
+    parse_configs,
+    get_latest_checkpoint,
+    load_config,
+    setup_logging,
+    set_device,
+)
 from util.animation import test_to_bvh
+from util.options import TestOptions
 
 log = logging.getLogger(__name__)
 
-#! Must be CUDA
-device = torch.device("cuda")
+device = set_device()
 
-MODES = ("unconditional")
+MODES = "unconditional"
 
 
 def get_file_num(save_dir: Path, name: str) -> int:
@@ -45,65 +51,40 @@ def get_random_primer_idx(dataset_len: int, n_samples: int):
     return idx
 
 
-def load_checkpoint(exp_dir, milestone) -> Tuple[GlobalConfig, Diffusion, Trainer]:
-    """Loads desired checkpoint for an experiment directory"""
+def load_checkpoint(exp_dir: Path, milestone):
+    """Loads latest checkpoint for an experiment directory"""
     if milestone == 0:
         checkpoint = torch.load(get_latest_checkpoint(exp_dir), map_location=device)
-        global_config = load_config_from_json(next(exp_dir.glob("**/*.json")))
-        diffusion, denoiser, trainer = initialize_model(
-            global_config.unet_config,
-            global_config.trainer_config,
-            global_config.diffusion_config,
-            global_config.path_config,
-            device,
-        )
+        configs = load_config(exp_dir)
+        trainer = initialize_trainer(configs, device)
         trainer.load(checkpoint)
         log.info(f"Checkpoint loaded, step {checkpoint['step']}.")
-
-    else:
-        checkpoint = torch.load(exp_dir / f"model-{milestone}.pt", map_location=device)
-        global_config = load_config_from_json(next(exp_dir.glob("**/*.json")))
-        diffusion, denoiser, trainer = initialize_model(
-            global_config.unet_config,
-            global_config.trainer_config,
-            global_config.diffusion_config,
-            global_config.path_config,
-            device,
-        )
-        trainer.load(checkpoint)
-        log.info(f"Checkpoint loaded, step {checkpoint['step']}.")
-    return global_config, diffusion, trainer
+    return configs, trainer
 
 
 def main():
     # Get args
-    opt = TestOptions()
-    test_config = opt.parser.parse_args()
+    test_config = parse_configs(TestOptions)["test_config"]
 
     # Check if args are correct
     assert test_config.mode in MODES, f"{test_config.mode} not supported."
 
     # Set log level
     setup_logging(test_config.verbose)
-
-    if test_config.massive:
-        # Get experiments in the massive folder
-        massive_dir = Path(test_config.massive)
-        assert massive_dir.exists(), f"Given massive directory doesn't exist."
-        exp_dirs = [d for d in massive_dir.iterdir() if d.is_dir()]
-        test_experiments(
-            exp_dirs,
-            test_config.mode,
-            test_config.n_samples,
-            test_config.sample_len,
-            test_config.milestones,
-            massive_dir=massive_dir,
-        )
+    exp_dirs = [Path(d) for d in test_config.exp_names if Path(d).is_dir()]
+    log.info(f"Testing {exp_dirs}")
+    test_experiments(
+        exp_dirs,
+        test_config.mode,
+        test_config.n_samples,
+        test_config.sample_len,
+        test_config.milestones,
+    )
 
 
 def test_experiments(
     exp_dirs, mode, n_samples, sample_len, milestones: list[int], massive_dir=None
-):
+) -> None:
     """Test experiments with given set of parameters"""
     dataset = None
     primers = None
@@ -114,19 +95,22 @@ def test_experiments(
         # Try catch block in case some model fails (this is primarily a slurm issue)
         try:
             log.info(f"Testing {exp_dir.stem}.")
-            global_config, diffusion, trainer = load_checkpoint(
+            configs, trainer = load_checkpoint(
                 exp_dir, milestones[i] if milestones != 0 else 0
             )
 
             if primers is None:
-                T = global_config.diffusion_config.T
+                T = configs["diffusion_config"].T
                 t = torch.tensor(list(range(0, T)), device=device).long()
-                dataset = np.load(global_config.path_config.data_path, mmap_mode="r")
-                primers = dataset[get_random_primer_idx(len(dataset), n_samples)]
+                log.info(f"Loading data from {configs['trainer_config'].data_path}")
+                dataset = np.load(configs["trainer_config"].data_path, mmap_mode="r")
+                random_primer_idx = get_random_primer_idx(len(dataset), n_samples)
+                primers = dataset[random_primer_idx]
                 primers = [torch.from_numpy(p) for p in primers]
                 primers = [
                     rearrange(p, "k frames -> frames 1 k").to(device) for p in primers
                 ]
+                diffusion = trainer.model
                 primers = torch.cat(primers, dim=1)
                 primers = diffusion.q_sample(
                     primers[:T, ...], t, torch.randn_like(primers[:T, ...])
@@ -147,9 +131,11 @@ def test_experiments(
             )
             save_dir.mkdir(parents=True, exist_ok=True)
             file_num = get_file_num(save_dir, mode)
-            print(len(output.keys()))
+            log.debug(len(output.keys()))
             saved_path = save_dir / f"{mode}{file_num}.pt"
             torch.save(output, saved_path)
+            with open(save_dir / "primer_idx.txt", "w") as f:
+                f.write(str(random_primer_idx))
 
             # Convert to bvhs
             ms = saved_path.__repr__().split("/")
@@ -161,11 +147,18 @@ def test_experiments(
             bvh_save_path.mkdir(parents=True, exist_ok=True)
             gen = torch.load(saved_path, map_location="cpu")
             for key, value in gen.items():
-                print(key, value.shape)
+                log.debug(key, value.shape)
                 if (bvh_save_path / f"{key}.bvh").exists():
                     raise KeyError("BVH files already exist")
                 else:
-                    test_to_bvh(value, bvh_save_path, f"{key}.bvh", dataset=500 if "500" in str(bvh_save_path) else 128)
+                    test_to_bvh(
+                        value,
+                        bvh_save_path,
+                        f"{key}.bvh",
+                        dataset=500 if "500" in str(bvh_save_path) else 128,
+                    )
+            with open(bvh_save_path / "primer_idx.txt", "w") as f:
+                f.write(str(random_primer_idx))
         except Exception as e:
             traceback.print_exc()
             log.error(e)
@@ -176,15 +169,8 @@ def progressive_generation(
     diffusion: Diffusion, condition: torch.Tensor, t: torch.Tensor, length: int
 ) -> Tensor:
     """
-    Generates animation progressively with "parallel" diffusion
-
-    * diffusion: diffusion model
-    * condition: input tensor, should contain clean frame and expectation of future frames
-    * t: time step conditioning
-    * length: iterations to run
+    Generates animation progressively with diffusion
     """
-
-    # NOTE: Assuming condition only has one clean frame at the start
     result = []
     diffusion.eval()
     diffusion.denoiser.eval()
@@ -201,9 +187,6 @@ def progressive_generation(
                 dim=0,
             )
     result = torch.concat(result, dim=0)
-
-    #! For fuzzy visualization
-    # result = torch.cat((result, condition), dim=0)
 
     return result
 

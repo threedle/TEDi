@@ -1,0 +1,23 @@
+name: tedi
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pytorch=1.12.1
+  - torchvision=0.13.1
+  - torchaudio=0.12.1
+  - cudatoolkit=11.3.1
+  - matplotlib=3.6.0
+  - pyyaml=6.0.1
+  - pip=23.0.1
+  - accelerate
+  - protobuf=3.20
+  - pip:
+    - einops
+    - ema-pytorch==0.0.10
+    - tqdm
+    - numpy==1.24.1
+    - tensorboard==2.8.0
+    - transforms3d

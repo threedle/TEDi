@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 
 import numpy as np
 import torch
@@ -21,4 +20,4 @@ class Dataset(torch.utils.data.Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        return self.data[idx]
+        return torch.from_numpy(self.data[idx].copy())

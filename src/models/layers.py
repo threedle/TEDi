@@ -1,4 +1,4 @@
-""" 
+"""
 Resnet block layers, normalization layers
 """
 
@@ -64,7 +64,7 @@ class Block(nn.Module):
         elif norm == "instance":
             self.norm = nn.InstanceNorm1d(dim_out)
         else:
-            raise ValueError(f"normalization {norm} not supported")
+            raise ValueError(f"Normalization {norm} not supported.")
 
         self.act = nn.SiLU()
 

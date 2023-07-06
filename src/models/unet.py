@@ -1,22 +1,23 @@
-""" 
-Unet denoiser mode
 """
+Unet denoiser for diffusion
+"""
+
 import logging
 from functools import partial
 
 import torch
 from einops import rearrange
-from src.attention import Attention, LinearAttention, SpatialAttention
-from src.layers import Downsample, Prenorm, Residual, ResnetBlock, Upsample
-from src.pos_emb import SinusoidalPosEmb
 from torch import nn
-from util import UnetConfig
+
+from .attention import Attention, LinearAttention
+from .layers import Downsample, Prenorm, Residual, ResnetBlock, Upsample
+from .pos_emb import SinusoidalPosEmb
 
 log = logging.getLogger(__name__)
 
 
 class Unet(nn.Module):
-    def __init__(self, config: UnetConfig):
+    def __init__(self, config):
         super().__init__()
         self.channels = config.channels
 
@@ -57,7 +58,6 @@ class Unet(nn.Module):
                         block(dim_in, dim_in),
                         block(dim_in, dim_in),
                         Residual(Prenorm(dim_in, LinearAttention(dim_in))),
-                        # Residual(Prenorm(dim_in, SpatialAttention(int(64 / (2 ** i)))))  if spatial_attn else nn.Identity(),
                         Downsample(
                             dim_in,
                             dim_out,

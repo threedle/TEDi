@@ -1,9 +1,5 @@
 """
-deals with all animation related stuff
-TODO: What do you want to achieve?
-    - efficiently parse incoming animation files: bvh, ...others?
-    - able to transform the parsed data into various other representations
-    - get features of the animation, velocity e.g.
+Deals with all animation related stuff
 """
 import re
 from pathlib import Path
@@ -14,8 +10,6 @@ import numpy as np
 import torch
 from einops import rearrange
 from matplotlib.animation import FuncAnimation
-from numpy.typing import NDArray
-from scipy.spatial.transform import Rotation
 from torch import Tensor
 from transforms3d.affines import compose
 from transforms3d.euler import mat2euler
@@ -345,30 +339,24 @@ def sixd2mat(vectors):
 
 
 def test_to_bvh(motion: Tensor, path: Path, name: str, dataset: int = 500) -> None:
-    """    
-    Translate test data directly to bvh
-
-    Input:
-        motion: Should have dimension (length, 1, feature)
-        path: Path to save bvh file
-        name: name of bvh to save
-    Returns:
-        None
+    """
+    Convert test data to bvh
     """
     s1 = slice(0, 3)
     s2 = slice(93, -4)
-    
+
     # Check path validity
     save_path = path / name
     assert not save_path.exists(), f"{save_path} already exists."
     # Parse a stereotype bvh file
+    data_dir = Path(__file__).parent.parent.parent / "data" / "processed" / "high"
     joints, *_ = parse_bvh_file(
-        "../train_data/01_01.bvh"
+        data_dir / "01_01.bvh"
     )
     non_end_joints = [joint for joint in joints if not joint.end_joint]
     # Take the firt half of a stereotype bvh file
     source_bvh = open(
-         "../train_data/01_01.bvh",
+          data_dir / "01_01.bvh",
         "rt",
     )
     source_data = source_bvh.read()
@@ -381,14 +369,14 @@ def test_to_bvh(motion: Tensor, path: Path, name: str, dataset: int = 500) -> No
     # Save frame number and fps = 30
     print(f"MOTION\nFrames: {len(motion)}\nFrame Time: 0.03333", file=bvh)
     # Load mean and std for motion
-    if dataset == 500:
-        mean = np.load(
-            "../train_data/cmu_full_500_mean.npy"
-        )
-        std = np.load(
-            "../train_data/cmu_full_500_std.npy"
-        )
-        raise ValueError(f"Invalid dataset {dataset}")
+
+    mean = np.load(
+        list(data_dir.glob("*mean.npy"))[0]
+    )
+    std = np.load(
+        list(data_dir.glob("*std.npy"))[0]
+    )
+
     # Get root motion
     root_pos = rearrange(motion[..., s1], "l 1 k -> l k")
     root_pos_y = root_pos[..., 2:3].clone()
@@ -476,7 +464,7 @@ def torch_forward_kinematics(
 def torch_sixd2mat(vec: Tensor) -> Tensor:
     """Return rotation matrices given 6D representations,
     implemented in torch for use in training loss
-    
+
     Input:
         vec: Rotation, should have dimension (batch_size, frames, joints, 6)
     Returns:

@@ -1,4 +1,4 @@
-""" 
+"""
 Positional embeddings
 """
 import logging
