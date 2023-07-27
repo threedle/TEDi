@@ -118,10 +118,10 @@
         </video>
         <div class="content has-text-justified">
           <p>
-            We present <strong>TEDi</strong> (<strong>T</strong>emporally-<strong>E</strong>ntangled <strong>Di</strong>ffusion), a motion diffusion framework that entangles the time-axis of diffusion 
-            and the temporal-axis of moiton. Compared to traditional DDPM adaptations for motion synthesis, which requires several 
-            hundred denoising steps to produce a short sequence of clean motion, TEDi generates a <strong><em>continuous stream </em></strong>of clean motions 
-            frames throughout the process.
+            We present <strong>TEDi</strong> (<strong>T</strong>emporally-<strong>E</strong>ntangled <strong>Di</strong>ffusion), a motion diffusion framework that
+            <strong>entangles</strong> the time-axis of diffusion and the temporal-axis of motion. Compared to typical motion diffusion models, which require 
+            several hundreds of denoising steps to produce a short sequence of clean motion from noise (left), TEDi generates <strong>long-term sequences</strong>
+            of clean frames throughout the process after being initiated by a motion primer - a short motion sequence (right).
           </p>
         </div>
       </div>
@@ -233,7 +233,10 @@
           <div class="columns is-centered has-text-centered">
             <h2 class="title is-3 is-centered">Gallery</h2>
           </div>
-
+          <div class="content has-text-justified">
+            <p> Our framwork generates diverse motion sequences with the same model.</p>
+          </div>
+          
           <div class="container">
             <div id="results-carousel" class="results-carousel">
               <div class="item item-bunny-headphones">
@@ -300,11 +303,16 @@
       </div>
 
 
-      <!-- <section class="section bg" id="BibTeX">
+      <section class="section" id="BibTeX">
         <div class="container is-max-desktop content">
           <h2 class="title">BibTeX</h2>
+          <pre><code>@InProceedings{zhang2023tedi,
+            author    = {Zhang, Zihan and Liu, Richard and Aberman, Kfir and Hanocka, Rana},
+            title     = {TEDi: Temporally-Entangled Diffusion for Motion Synthesis},
+            year      = {2023},
+          }</code></pre>
         </div>
-      </section> -->
+      </section>
 
 
       <footer class="footer">
