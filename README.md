@@ -1,6 +1,6 @@
 # TEDi Motion Diffusion
 
-This is the repository that contains source code for [TEDi Motion Diffusion website](https://threedle.github.io/).
+This is the repository that contains source code for [TEDi Motion Diffusion website](https://threedle.github.io/TEDi).
 
 <!-- If you find TEDi useful for your work please cite:
 
