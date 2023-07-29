@@ -302,6 +302,28 @@
         </div>
       </div>
 
+      <hr class="divider" />
+
+
+      <div class="columns is-centered has-text-centered bg">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Trajectory Control</h2>
+          <div class="content has-text-justified">
+            <p>
+              Our work can be applied to perform trajectory control during inference without additional training. 
+              Similar to the mechanism of guided generation, trajectory control is achieved with inpainting in the motion buffer.
+              Namely, during inference, we recursively overwrite the trjactory information in the motion buffer with frames in the desired trajectory.
+            </p>
+          </div>
+          <div class="overview-image">
+            <video poster="" id="bunny-headphones" controls autoplay muted loop playsinline height="100%">
+              <source src="./static/videos/website_trajectory.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+      </div>
+
+
       <section class="section" id="acknowledgements">
         <div class="container has-text-justified">
           <h2 class="title">Acknowledgements</h2>
