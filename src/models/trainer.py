@@ -82,7 +82,7 @@ class Trainer:
         # inside the general checkpoints folder
         self.checkpoints_folder = config.checkpoints_folder / f"{self.exp_name}"
         log.debug(f"{self.checkpoints_folder=}")
-        self.checkpoints_folder.mkdir(exist_ok=True)
+        self.checkpoints_folder.mkdir(exist_ok=True, parents=True)
 
         # Make runs folder for tensorboard
         self.runs_dir = Path(f"../runs/{Path(*self.checkpoints_folder.parts[-2:])}")

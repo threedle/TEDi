@@ -35,7 +35,7 @@ class TrainOptions:
             "-p",
             "--data_path",
             type=str,
-            default="../data/processed/cmu_full_500.npy",
+            default="../data/processed/cmu_full_tedi.npy",
         )
         trainer_config.add_argument(
             "-c", "--checkpoints_folder", type=str, default="../exps/"

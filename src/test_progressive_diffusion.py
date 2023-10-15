@@ -145,7 +145,6 @@ def test_experiments(
                         value,
                         bvh_save_path,
                         f"{key}.bvh",
-                        dataset=500 if "500" in str(bvh_save_path) else 128,
                     )
             with open(bvh_save_path / "primer_idx.txt", "w") as f:
                 f.write(str(random_primer_idx))
