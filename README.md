@@ -13,6 +13,8 @@ conda activate tedi
 ## Usage
 
 ### Training
+(Data download coming soon...)
+
 To train on the CMU dataset with the default set of hyperparameters described in ```src/util/options.py``` run
 
 ```
