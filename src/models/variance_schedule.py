@@ -48,7 +48,6 @@ def cosine_beta_schedule(timesteps: int, s: float = 0.008) -> Tensor:
     return torch.clip(betas, 0, 0.999)
 
 
-# TODO: Comments
 def sigmoid_beta_schedule(
     timesteps: int, start: int = -3, end: int = 3, tau: int = 1, clamp_min: float = 1e-5
 ) -> Tensor:

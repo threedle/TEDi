@@ -1,13 +1,3 @@
-""" 
-This program loads a trained model and tests it.
-
-Usage:
-[--massive] [massive training folder]: pass in the massive training folder and it
-will generate a few pieces of motion per experiment.
-[--exp_names] [LIST of experiment folders]: pass in specific experiment folder for
-generation.
-"""
-
 import logging
 import traceback
 from pathlib import Path
