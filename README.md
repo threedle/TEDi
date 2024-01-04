@@ -1,6 +1,6 @@
 # TEDi: Temporally-Entangled Diffusion for Long-Term Motion Synthesis
 
-[[Project Page](https://threedle.github.io/TEDi/)] [[ArXiv](https://arxiv.org/abs/2307.15042)]
+[[Project Page](https://threedle.github.io/TEDi/)]
 
 
 ## Installation
